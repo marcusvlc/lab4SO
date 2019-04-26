@@ -52,14 +52,23 @@ class PhysicalMemory:
 
 class Aging:
     def __init__(self, nbits):
-      self.pageTable = []
+      self.pageTable = [] # Iniciando uma tabela de páginas vazia
       self.ALGORITHM_AGING_NBITS = nbits
 
     def put(self, frameId):
-      pass
+      self.pageTable.append([frameId,0]) # Toda página inicia com um contador de valor 0
 
     def evict(self):
-      pass
+      smallerFrame = self.pageTable[0] 
+      smallerCounter = smallerFrame[1]
+
+      for frame in self.pageTable: # Varre a tabela de páginas em busca da página com menor contador
+        if frame[1] < smallerCounter:
+          smallerCounter = frame[1]
+          smallerFrame = frame
+
+      self.pageTable.remove(smallerFrame) # Remove a página com menor contador
+      return smallerFrame[0] # Retorna o ID da página removida
 
     def clock(self):
       pass
