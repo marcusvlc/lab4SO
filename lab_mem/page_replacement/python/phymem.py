@@ -54,3 +54,15 @@ class Aging:
     def __init__(self, nbits):
       self.pageTable = []
       self.ALGORITHM_AGING_NBITS = nbits
+
+    def put(self, frameId):
+      pass
+
+    def evict(self):
+      pass
+
+    def clock(self):
+      pass
+
+    def access(self,frameId,isWrite):
+      pass
