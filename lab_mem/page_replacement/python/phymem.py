@@ -86,9 +86,22 @@ class Aging:
         if(frameId == frame[0]): # Procura a página na tabela de páginas
           frame[1] |= 1 << (self.ALGORITHM_AGING_NBITS - 1) # Coloca 1 no bit mais significativo, aumentando assim o contador
 
+class Fifo:
+    def __init__(self):
+      from Queue import Queue
+      self.queue = Queue() # Inicializando fila vazia
 
+    def put(self, frameId):
+      self.queue.put(frameId) # Adicionando página no final
 
+    def evict(self):
+      return self.queue.get() # Removendo página do início
+          
+    def clock(self): # Não usa
+      pass
 
+    def access(self,frameId,isWrite): # Se a página for usada. O bit é setado para 1
+      pass
 
 class SecondChance:
     def __init__(self):
