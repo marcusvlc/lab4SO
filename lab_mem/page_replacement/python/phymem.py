@@ -85,3 +85,34 @@ class Aging:
       for frame in self.allocatedFrames:
         if(frameId == frame[0]): # Procura a página na tabela de páginas
           frame[1] |= 1 << (self.ALGORITHM_AGING_NBITS - 1) # Coloca 1 no bit mais significativo, aumentando assim o contador
+
+
+
+
+
+class SecondChance:
+    def __init__(self):
+      from Queue import Queue
+      self.queue = Queue() # Inicializando fila vazia
+
+    def put(self, frameId):
+      self.queue.put([frameId, 0]) # Adicionando página com bit 0
+
+    def evict(self):
+      
+      while True:
+        head = self.queue.get() 
+        
+        if node[1] == 1 : # Se a página tiver bit 1, significa que ela é velha e usada recentemente. Assim ela ganha uma nova chance como uma página nova         
+          head[1] = 0
+          self.queue.put(head)
+        else: # Se a página tiver bit 0, significa que ela é velha e não foi usada recentemente. Assim ela é removida
+          return head[0]
+          
+    def clock(self): # Não usa
+      pass
+
+    def access(self,frameId,isWrite): # Se a página for usada. O bit é setado para 1
+      for node in self.queue:
+        if(frameId == node[0]):
+          node[1] = 1
