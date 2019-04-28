@@ -7,6 +7,7 @@
 
 # NOTE: there may be methods you don't need to modify, you must decide what
 # you need...
+from random import randint
 
 class PhysicalMemory:
   ALGORITHM_AGING_NBITS = 8
@@ -15,7 +16,7 @@ class PhysicalMemory:
   def __init__(self, algorithm):
     assert algorithm in {"fifo", "nru", "aging", "second-chance","lru"}
     self.algorithm = algorithm
-    self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
+    self.strategy = Nru()
     '''
     if (algorithm == "aging"):
       self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
@@ -55,24 +56,53 @@ class PhysicalMemory:
     self.strategy.access(frameId,isWrite)
 
 class Nru:
+
   def __init__(self):
     self.allocatedFrames = {} ## Iniciando uma tabela de paginas vazia. Key = FrameID / Value = Valores dos bits
-    POS_REFERENCE_BIT = 0 # Indice do array de bits que se encontra o bit de referencia
-    POS_MODIFY_BIT = 1 # Indice do array de bits que se encontra o bit de modificacao
-    INIT_REFERENCE_BIT = 0 ## Valor inicial do bit de referencia
-    INIT_MODIFY_BIT = 0 ## Valor inicial do bit de modificacao
-
+    self.POS_REFERENCE_BIT = 0 # Indice do array de bits que se encontra o bit de referencia
+    self.POS_MODIFY_BIT = 1 # Indice do array de bits que se encontra o bit de modificacao
+    self.INIT_REFERENCE_BIT = 0 ## Valor inicial do bit de referencia
+    self.INIT_MODIFY_BIT = 0 ## Valor inicial do bit de modificacao
+  
   def put(self, frameId):
-    self.allocatedFrames[frameId] = [INIT_REFERENCE_BIT,INIT_MODIFY_BIT]
+    self.allocatedFrames[frameId] = [self.INIT_REFERENCE_BIT,self.INIT_MODIFY_BIT] # Coloca no dicionario de paginas um item cuja key eh o frameID e seu valor eh um array com os valores dos bits
 
   def evict(self):
-    pass
+    classes = {0:[0,0], 1:[0,1], 2:[1,0], 3:[1,1]} ## Dicionario com classes existentes no NRU
+    actual_class = 0 ## Classe inicial para procurar alguem para desalocar
+    deleted_frame = -1 ## Variavel que guarda o valor de retorno do elemento desalocado
+
+    while(actual_class <= 3): ## Enquanto a classe for valida (entre 0 e 3)
+      frames_from_class = [] ## Array para guardar todos os framesIDs da classe atual
+
+      for key, value in self.allocatedFrames.items(): ## Itera sobre o dicionario de frames procurando os frameIDS da classe atual
+        if(value == classes[actual_class]):
+          frames_from_class.append(key)
+      
+      if(len(frames_from_class) > 0): ## Se tiver alguem daquela classe
+        pos_to_kill = randint(0, len(frames_from_class)-1) ## Pega alguma pagina aleatoria daquela classe 
+        deleted_frame = frames_from_class[pos_to_kill] ## Guarda o selecionado para retorno
+        del self.allocatedFrames[frames_from_class[pos_to_kill]] ## Deleta o selecionado do dicionario de paginas
+        break ## Obrigatoriamente sai do loop caso ache alguem
+      
+      actual_class += 1 ## Se nao tiver ninguem daquela classe, seguir adiante para a proxima
+
+
+    return deleted_frame
 
   def clock(self):
-    pass
+    for _, value in self.allocatedFrames.items():
+      value[self.POS_REFERENCE_BIT] = 0 # Colocando todos os bits de referencia como 0 a cada interrupcao de relogio
+
 
   def access(self, frameId, isWrite):
-    pass
+    if(frameId in self.allocatedFrames.keys()): ## Verifica se o frameID passado esta no dicionario de frames
+      if(isWrite): 
+        self.allocatedFrames[frameId] = [1,1] ## Se a op for de escrita, mudar os 2 bits (vira classe 3)
+      else:
+        self.allocatedFrames[frameId][self.POS_REFERENCE_BIT] = 1 ## Se nao for, mudar apenas o bit de referencia (vira classe 2)
+    else:
+      pass ## Se o frameID nao estiver, nao faz nada.
 
 class Lru:
     def __init__(self):
