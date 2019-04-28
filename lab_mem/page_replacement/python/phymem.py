@@ -7,6 +7,7 @@
 
 # NOTE: there may be methods you don't need to modify, you must decide what
 # you need...
+from random import randint
 
 class PhysicalMemory:
   ALGORITHM_AGING_NBITS = 8
@@ -15,7 +16,7 @@ class PhysicalMemory:
   def __init__(self, algorithm):
     assert algorithm in {"fifo", "nru", "aging", "second-chance","lru"}
     self.algorithm = algorithm
-    self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
+    self.strategy = Nru()
     '''
     if (algorithm == "aging"):
       self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
@@ -43,7 +44,7 @@ class PhysicalMemory:
     """Deallocates a frame from the physical memory and returns its frameId"""
     # You may assume the physical memory is FULL so we need space!
     # Your code must decide which frame to return, according to the algorithm
-    self.strategy.evict()
+    return self.strategy.evict()
 
   def clock(self):
     """The amount of time we set for the clock has passed, so this is called"""
@@ -54,6 +55,91 @@ class PhysicalMemory:
     """A frameId was accessed for read/write (if write, isWrite=True)"""
     self.strategy.access(frameId,isWrite)
 
+class Nru:
+
+  def __init__(self):
+    self.allocatedFrames = {} ## Iniciando uma tabela de paginas vazia. Key = FrameID / Value = Valores dos bits
+    self.POS_REFERENCE_BIT = 0 # Indice do array de bits que se encontra o bit de referencia
+    self.POS_MODIFY_BIT = 1 # Indice do array de bits que se encontra o bit de modificacao
+    self.INIT_REFERENCE_BIT = 0 ## Valor inicial do bit de referencia
+    self.INIT_MODIFY_BIT = 0 ## Valor inicial do bit de modificacao
+  
+  def put(self, frameId):
+    self.allocatedFrames[frameId] = [self.INIT_REFERENCE_BIT,self.INIT_MODIFY_BIT] # Coloca no dicionario de paginas um item cuja key eh o frameID e seu valor eh um array com os valores dos bits
+
+  def evict(self):
+    classes = {0:[0,0], 1:[0,1], 2:[1,0], 3:[1,1]} ## Dicionario com classes existentes no NRU
+    actual_class = 0 ## Classe inicial para procurar alguem para desalocar
+    deleted_frame = -1 ## Variavel que guarda o valor de retorno do elemento desalocado
+
+    while(actual_class <= 3): ## Enquanto a classe for valida (entre 0 e 3)
+      frames_from_class = [] ## Array para guardar todos os framesIDs da classe atual
+
+      for key, value in self.allocatedFrames.items(): ## Itera sobre o dicionario de frames procurando os frameIDS da classe atual
+        if(value == classes[actual_class]):
+          frames_from_class.append(key)
+      
+      if(len(frames_from_class) > 0): ## Se tiver alguem daquela classe
+        pos_to_kill = randint(0, len(frames_from_class)-1) ## Pega alguma pagina aleatoria daquela classe 
+        deleted_frame = frames_from_class[pos_to_kill] ## Guarda o selecionado para retorno
+        del self.allocatedFrames[frames_from_class[pos_to_kill]] ## Deleta o selecionado do dicionario de paginas
+        break ## Obrigatoriamente sai do loop caso ache alguem
+      
+      actual_class += 1 ## Se nao tiver ninguem daquela classe, seguir adiante para a proxima
+
+
+    return deleted_frame
+
+  def clock(self):
+    for _, value in self.allocatedFrames.items():
+      value[self.POS_REFERENCE_BIT] = 0 # Colocando todos os bits de referencia como 0 a cada interrupcao de relogio
+
+
+  def access(self, frameId, isWrite):
+    if(frameId in self.allocatedFrames.keys()): ## Verifica se o frameID passado esta no dicionario de frames
+      if(isWrite): 
+        self.allocatedFrames[frameId] = [1,1] ## Se a op for de escrita, mudar os 2 bits (vira classe 3)
+      else:
+        self.allocatedFrames[frameId][self.POS_REFERENCE_BIT] = 1 ## Se nao for, mudar apenas o bit de referencia (vira classe 2)
+    else:
+      pass ## Se o frameID nao estiver, nao faz nada.
+
+class Lru:
+    def __init__(self):
+      self.allocatedFrames = [] # Iniciando uma tabela de páginas vazia
+      self.timer = 0
+
+    def put(self, frameId):
+      self.timer = self.timer + 1
+      self.allocatedFrames.append([frameId,self.timer]) # Coloca na tabela de páginas a página e o tempo que foi acessada
+
+    def evict(self): # Procura a página com tempo menor (menos utilizada) e remove
+      if(len(self.allocatedFrames) > 0):
+        smallerFrame = self.allocatedFrames[0]
+        smallerTime = smallerFrame[1]
+        for frame in self.allocatedFrames:
+          if frame[1] < smallerTime:
+            smallerTime = frame[1]
+            smallerFrame = frame
+
+        print("Smaller frame: ", smallerFrame)
+        self.allocatedFrames.remove(smallerFrame)
+        return int(smallerFrame[0])
+      return -1
+
+    def clock(self):
+      pass
+    
+    def access(self, frameId, isWrite): # Atuaiza o tempo que a página foi acessada
+      self.timer = self.timer + 1
+      for frame in self.allocatedFrames:
+        if frame[0] == frameId:
+          self.allocatedFrames.remove(frame)
+          self.allocatedFrames.append([frameId,self.timer])
+          print("New pages: ")
+          print(self.allocatedFrames)
+          print("---------")
+
 class Aging:
     def __init__(self, nbits):
       self.allocatedFrames = [] # Iniciando uma tabela de páginas vazia
@@ -63,16 +149,24 @@ class Aging:
       self.allocatedFrames.append([frameId,0]) # Toda página inicia com um contador de valor 0
 
     def evict(self):
-      smallerFrame = self.allocatedFrames[0] 
-      smallerCounter = smallerFrame[1]
+      if(len(self.allocatedFrames) > 0):
+        smallerFrame = self.allocatedFrames[0] 
+        smallerCounter = smallerFrame[1]
 
-      for frame in self.allocatedFrames: # Varre a tabela de páginas em busca da página com menor contador
-        if frame[1] < smallerCounter:
-          smallerCounter = frame[1]
-          smallerFrame = frame
-         
-      self.allocatedFrames.remove(smallerFrame) # Remove a página com menor contador
-      return smallerFrame[0] # Retorna o ID da página removida
+        for frame in self.allocatedFrames: # Varre a tabela de páginas em busca da página com menor contador
+          if frame[1] < smallerCounter:
+            smallerCounter = frame[1]
+            smallerFrame = frame
+          
+        self.allocatedFrames.remove(smallerFrame) # Remove a página com menor contador
+
+        print("New pages: ")
+        print(self.allocatedFrames)
+        print("---------")
+
+        return int(smallerFrame[0]) # Retorna o ID da página removida
+
+      return -1
 
     def clock(self):
       # A cada interrupção de clock, os contadores são deslocados à direita em um bit.
