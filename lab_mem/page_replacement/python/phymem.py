@@ -15,7 +15,7 @@ class PhysicalMemory:
   def __init__(self, algorithm):
     assert algorithm in {"fifo", "nru", "aging", "second-chance","lru"}
     self.algorithm = algorithm
-    self.strategy = Lru()
+    self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
     '''
     if (algorithm == "aging"):
       self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
@@ -43,7 +43,7 @@ class PhysicalMemory:
     """Deallocates a frame from the physical memory and returns its frameId"""
     # You may assume the physical memory is FULL so we need space!
     # Your code must decide which frame to return, according to the algorithm
-    self.strategy.evict()
+    return self.strategy.evict()
 
   def clock(self):
     """The amount of time we set for the clock has passed, so this is called"""
@@ -53,6 +53,26 @@ class PhysicalMemory:
   def access(self, frameId, isWrite):
     """A frameId was accessed for read/write (if write, isWrite=True)"""
     self.strategy.access(frameId,isWrite)
+
+class Nru:
+  def __init__(self):
+    self.allocatedFrames = {} ## Iniciando uma tabela de paginas vazia. Key = FrameID / Value = Valores dos bits
+    POS_REFERENCE_BIT = 0 # Indice do array de bits que se encontra o bit de referencia
+    POS_MODIFY_BIT = 1 # Indice do array de bits que se encontra o bit de modificacao
+    INIT_REFERENCE_BIT = 0 ## Valor inicial do bit de referencia
+    INIT_MODIFY_BIT = 0 ## Valor inicial do bit de modificacao
+
+  def put(self, frameId):
+    self.allocatedFrames[frameId] = [INIT_REFERENCE_BIT,INIT_MODIFY_BIT]
+
+  def evict(self):
+    pass
+
+  def clock(self):
+    pass
+
+  def access(self, frameId, isWrite):
+    pass
 
 class Lru:
     def __init__(self):
@@ -64,16 +84,18 @@ class Lru:
       self.allocatedFrames.append([frameId,self.timer]) # Coloca na tabela de páginas a página e o tempo que foi acessada
 
     def evict(self): # Procura a página com tempo menor (menos utilizada) e remove
-      smallerFrame = self.allocatedFrames[0]
-      smallerTime = smallerFrame[1]
-      for frame in self.allocatedFrames:
-        if frame[1] < smallerTime:
-          smallerTime = frame[1]
-          smallerFrame = frame
+      if(len(self.allocatedFrames) > 0):
+        smallerFrame = self.allocatedFrames[0]
+        smallerTime = smallerFrame[1]
+        for frame in self.allocatedFrames:
+          if frame[1] < smallerTime:
+            smallerTime = frame[1]
+            smallerFrame = frame
 
-      print("Smaller frame: ", smallerFrame)
-      self.allocatedFrames.remove(smallerFrame)
-      return int(smallerFrame[0])
+        print("Smaller frame: ", smallerFrame)
+        self.allocatedFrames.remove(smallerFrame)
+        return int(smallerFrame[0])
+      return -1
 
     def clock(self):
       pass
@@ -97,21 +119,24 @@ class Aging:
       self.allocatedFrames.append([frameId,0]) # Toda página inicia com um contador de valor 0
 
     def evict(self):
-      smallerFrame = self.allocatedFrames[0] 
-      smallerCounter = smallerFrame[1]
+      if(len(self.allocatedFrames) > 0):
+        smallerFrame = self.allocatedFrames[0] 
+        smallerCounter = smallerFrame[1]
 
-      for frame in self.allocatedFrames: # Varre a tabela de páginas em busca da página com menor contador
-        if frame[1] < smallerCounter:
-          smallerCounter = frame[1]
-          smallerFrame = frame
-         
-      self.allocatedFrames.remove(smallerFrame) # Remove a página com menor contador
+        for frame in self.allocatedFrames: # Varre a tabela de páginas em busca da página com menor contador
+          if frame[1] < smallerCounter:
+            smallerCounter = frame[1]
+            smallerFrame = frame
+          
+        self.allocatedFrames.remove(smallerFrame) # Remove a página com menor contador
 
-      print("New pages: ")
-      print(self.allocatedFrames)
-      print("---------")
-      
-      return int(smallerFrame[0]) # Retorna o ID da página removida
+        print("New pages: ")
+        print(self.allocatedFrames)
+        print("---------")
+
+        return int(smallerFrame[0]) # Retorna o ID da página removida
+
+      return -1
 
     def clock(self):
       # A cada interrupção de clock, os contadores são deslocados à direita em um bit.
