@@ -15,7 +15,7 @@ class PhysicalMemory:
   def __init__(self, algorithm):
     assert algorithm in {"fifo", "nru", "aging", "second-chance","lru"}
     self.algorithm = algorithm
-    self.strategy = Lru()
+    self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
     '''
     if (algorithm == "aging"):
       self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
@@ -71,8 +71,14 @@ class Lru:
           smallerTime = frame[1]
           smallerFrame = frame
 
+      print("--------")
       print("Smaller frame: ", smallerFrame)
+     
+
       self.allocatedFrames.remove(smallerFrame)
+      print("Actual pages: ")
+      print(self.allocatedFrames)
+      print("--------")  
       return int(smallerFrame[0])
 
     def clock(self):
@@ -84,7 +90,7 @@ class Lru:
         if frame[0] == frameId:
           self.allocatedFrames.remove(frame)
           self.allocatedFrames.append([frameId,self.timer])
-          print("New pages: ")
+          print("Actual pages: ")
           print(self.allocatedFrames)
           print("---------")
 
@@ -104,12 +110,14 @@ class Aging:
         if frame[1] < smallerCounter:
           smallerCounter = frame[1]
           smallerFrame = frame
-         
+      
+      print("--------")
+      print("Smaller frame: ", smallerFrame)
       self.allocatedFrames.remove(smallerFrame) # Remove a página com menor contador
 
-      print("New pages: ")
+      print("Actual pages: ")
       print(self.allocatedFrames)
-      print("---------")
+      print("--------")
       
       return int(smallerFrame[0]) # Retorna o ID da página removida
 
@@ -117,10 +125,18 @@ class Aging:
       # A cada interrupção de clock, os contadores são deslocados à direita em um bit.
       for frame in self.allocatedFrames:
         frame[1] >>= 1 # Bits são movidos uma casa para a direita
+      print("--------- OLHA O CLOCK ---------")
+      print("Actual pages: ")
+      print(self.allocatedFrames)
+      print("--------------------------------")
       
 
     def access(self,frameId,isWrite):
       # Tem que aparecer um 1 no bit mais significativo (mais a esquerda)
       for frame in self.allocatedFrames:
         if(frameId == frame[0]): # Procura a página na tabela de páginas
-          frame[1] |= 1 << (self.ALGORITHM_AGING_NBITS - 1) # Coloca 1 no bit mais significativo, aumentando assim o contador
+          frame[1] |= 1 << (self.ALGORITHM_AGING_NBITS - 1)
+          
+      print("Actual pages: ")
+      print(self.allocatedFrames)
+      print("---------") # Coloca 1 no bit mais significativo, aumentando assim o contador
