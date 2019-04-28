@@ -16,23 +16,23 @@ class PhysicalMemory:
   def __init__(self, algorithm):
     assert algorithm in {"fifo", "nru", "aging", "second-chance","lru"}
     self.algorithm = algorithm
-    self.strategy = Nru()
-    '''
+    #self.strategy = Fifo()
+    
     if (algorithm == "aging"):
       self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
     elif (algorithm == "fifo"):
       pass
-      #self.strategy = Fifo()
+      self.strategy = Fifo()
     elif (algorithm == "nru"):
       pass
-      #self.strategy = Nru()
+      self.strategy = Nru()
     elif (algorithm == "second-chance"):
       pass
-      #self.strategy = SecondChance()
+      self.strategy = SecondChance()
     elif (algorithm == "lru"):
       pass
-      #self.strategy = Lru()
-      '''
+      self.strategy = Lru()
+      
 
   def put(self, frameId):
     """Allocates this frameId for some page"""
@@ -189,12 +189,17 @@ class Fifo:
       self.queue.put(frameId) # Adicionando página no final
 
     def evict(self):
-      return self.queue.get() # Removendo página do início
+      frameID = -1
+
+      if not self.queue.empty():
+        frameID = self.queue.get() # Removendo página do início
+
+      return frameID 
           
     def clock(self): # Não usa
       pass
 
-    def access(self,frameId,isWrite): # Se a página for usada. O bit é setado para 1
+    def access(self,frameId,isWrite): # Não usa
       pass
 
 class SecondChance:
@@ -206,11 +211,14 @@ class SecondChance:
       self.queue.put([frameId, 0]) # Adicionando página com bit 0
 
     def evict(self):
+
+      if self.queue.empty():
+        return -1
       
       while True:
         head = self.queue.get() 
         
-        if node[1] == 1 : # Se a página tiver bit 1, significa que ela é velha e usada recentemente. Assim ela ganha uma nova chance como uma página nova         
+        if head[1] == 1 : # Se a página tiver bit 1, significa que ela é velha e usada recentemente. Assim ela ganha uma nova chance como uma página nova         
           head[1] = 0
           self.queue.put(head)
         else: # Se a página tiver bit 0, significa que ela é velha e não foi usada recentemente. Assim ela é removida
@@ -219,7 +227,12 @@ class SecondChance:
     def clock(self): # Não usa
       pass
 
-    def access(self,frameId,isWrite): # Se a página for usada. O bit é setado para 1
-      for node in self.queue:
-        if(frameId == node[0]):
-          node[1] = 1
+    def access(self,frameId,isWrite): # Se a página for usada, o bit é setado para 1
+      from Queue import Queue
+      newQueue = Queue()
+      while not self.queue.empty():
+        head = self.queue.get()
+        if head[0] == frameId:
+          head[1] = 1
+        newQueue.put(head)
+      self.queue = newQueue
