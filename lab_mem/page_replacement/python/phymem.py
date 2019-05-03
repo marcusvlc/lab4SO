@@ -122,7 +122,6 @@ class Lru:
             smallerTime = frame[1]
             smallerFrame = frame
 
-        print("Smaller frame: ", smallerFrame)
         self.allocatedFrames.remove(smallerFrame)
         return int(smallerFrame[0])
       return -1
@@ -136,9 +135,7 @@ class Lru:
         if frame[0] == frameId:
           self.allocatedFrames.remove(frame)
           self.allocatedFrames.append([frameId,self.timer])
-          print("New pages: ")
-          print(self.allocatedFrames)
-          print("---------")
+
 
 class Aging:
     def __init__(self, nbits):
@@ -159,10 +156,6 @@ class Aging:
             smallerFrame = frame
           
         self.allocatedFrames.remove(smallerFrame) # Remove a página com menor contador
-
-        print("New pages: ")
-        print(self.allocatedFrames)
-        print("---------")
 
         return int(smallerFrame[0]) # Retorna o ID da página removida
 

@@ -34,7 +34,6 @@ class VirtualMemory:
                 self.phy_mem.access(new_frame_id, write_mode)
             else:
                 evicted_frame_id = self.phy_mem.evict()
-                print(self.phy_mem.evict(), "-------------------")
                 assert type(evicted_frame_id) == int, "frameId returned by evict should be an int"
                 page_id_out = self.frame2page.get(evicted_frame_id, None)
                 assert page_id_out is not None, "frameId returned by evict should be allocated"
