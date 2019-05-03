@@ -8,6 +8,8 @@
 # NOTE: there may be methods you don't need to modify, you must decide what
 # you need...
 from random import randint
+from Queue import Queue
+
 
 class PhysicalMemory:
   ALGORITHM_AGING_NBITS = 8
@@ -175,7 +177,6 @@ class Aging:
 
 class Fifo:
     def __init__(self):
-      from Queue import Queue
       self.queue = Queue() # Inicializando fila vazia
 
     def put(self, frameId):
@@ -197,7 +198,6 @@ class Fifo:
 
 class SecondChance:
     def __init__(self):
-      from Queue import Queue
       self.queue = Queue() # Inicializando fila vazia
 
     def put(self, frameId):
@@ -221,7 +221,6 @@ class SecondChance:
       pass
 
     def access(self,frameId,isWrite): # Se a página for usada, o bit é setado para 1
-      from Queue import Queue
       newQueue = Queue()
       while not self.queue.empty():
         head = self.queue.get()
