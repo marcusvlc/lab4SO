@@ -1,6 +1,6 @@
 This is the Naive page replacement policy simulator
 
-## Hipótese: Ranking das Estratégias de Substituicão de Página
+## Hipótese: Ranking das Estratégias de Substituicão de Página:
 
 Em ordem de pior para melhor desempenho:
 
