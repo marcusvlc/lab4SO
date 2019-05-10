@@ -11,10 +11,10 @@ nfaults,nframes,alg
 84369,32,lru
 243805,4,lru
 171178,8,lru
-130752,16,nru
-88754,32,nru
-356757,4,nru
-208272,8,nru
+130528,16,nru
+88871,32,nru
+356206,4,nru
+208324,8,nru
 121666,16,second-chance
 87654,32,second-chance
 276964,4,second-chance

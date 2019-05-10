@@ -18,8 +18,7 @@ class PhysicalMemory:
   def __init__(self, algorithm):
     assert algorithm in {"fifo", "nru", "aging", "second-chance","lru"}
     self.algorithm = algorithm
-    #self.strategy = Fifo()
-    
+        
     if (algorithm == "aging"):
       self.strategy = Aging(self.ALGORITHM_AGING_NBITS)
     elif (algorithm == "fifo"):
@@ -198,22 +197,22 @@ class Fifo:
 
 class SecondChance:
     def __init__(self):
-      self.queue = Queue() # Inicializando fila vazia
+      self.queue = [] # Inicializando fila vazia
 
     def put(self, frameId):
-      self.queue.put([frameId, 0]) # Adicionando página com bit 0
+      self.queue.append([frameId, 0]) # Adicionando página com bit 0
 
     def evict(self):
 
-      if self.queue.empty():
+      if self.queue == []:
         return -1
       
       while True:
-        head = self.queue.get() 
+        head = self.queue.pop(0) 
         
         if head[1] == 1 : # Se a página tiver bit 1, significa que ela é velha e usada recentemente. Assim ela ganha uma nova chance como uma página nova         
           head[1] = 0
-          self.queue.put(head)
+          self.queue.append(head)
         else: # Se a página tiver bit 0, significa que ela é velha e não foi usada recentemente. Assim ela é removida
           return head[0]
           
@@ -221,10 +220,7 @@ class SecondChance:
       pass
 
     def access(self,frameId,isWrite): # Se a página for usada, o bit é setado para 1
-      newQueue = Queue()
-      while not self.queue.empty():
-        head = self.queue.get()
-        if head[0] == frameId:
-          head[1] = 1
-        newQueue.put(head)
-      self.queue = newQueue
+      for frame in self.queue:
+        if frame[0] == frameId:
+          frame[1] = 1
+          break 
